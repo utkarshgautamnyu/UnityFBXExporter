@@ -431,7 +431,8 @@ namespace UnityFBXExporter
                 everyDistinctMaterial = everyDistinctMaterial.OrderBy(o => o.name).ToArray<Material>();
             } catch(System.Exception e)
             {
-                EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+                //EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+                Debug.Log(e);
             }
 
             //Log warning if there are multiple assets with the same name
@@ -452,7 +453,8 @@ namespace UnityFBXExporter
                     }
                 }
             } catch (System.Exception e) {
-                EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+                //EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+                Debug.Log(e);
             }
             List<string> everyMaterialName = new List<string>();
             try
@@ -473,7 +475,8 @@ namespace UnityFBXExporter
                 }
             } catch (System.Exception e)
             {
-                EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+                //EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+                Debug.Log(e);
             }
               
             // 3. Go through newly moved materials and copy every texture and update the material

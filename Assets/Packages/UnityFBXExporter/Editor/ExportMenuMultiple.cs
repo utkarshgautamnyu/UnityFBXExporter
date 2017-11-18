@@ -92,15 +92,8 @@ namespace UnityFBXExporter {
             }
             // Get folder path
             string newPath = GetNewPath(oldPath);
-            int x = 0;
-            foreach (var gameObject in gameObjects) {
-                x++;
-                //if (x == 24)
-                //{
-                //    EditorUtility.DisplayDialog("Object is null", "Object is" + gameObject.name, "Okay");
-                //    //break;
-                //}
 
+            foreach (var gameObject in gameObjects) {
                 var fileName = newPath + "/" + gameObject.name + ".fbx";
                 if (fileName != null && fileName.Length != 0) {
                     bool isSuccess = FBXExporter.ExportGameObjToFBX(gameObject, fileName, copyMaterials, copyTextures);
@@ -151,7 +144,7 @@ namespace UnityFBXExporter {
 
             string filePath = EditorUtility.SaveFilePanelInProject("Select JSON Filename", "gameObjects.json", "json", "Export GameObjects to a JSON file");
 
-            StringBuilder jsonOutput = new StringBuilder("[");
+            StringBuilder jsonOutput = new StringBuilder("{\"Entities\":[");
 
             for (int i = 0; i < gameObjects.Count; i++) {
                 SerializeJSON jsonObject = new SerializeJSON();
@@ -191,7 +184,7 @@ namespace UnityFBXExporter {
                     jsonOutput.Append(",");
                 }
             }
-            jsonOutput.Append("]");
+            jsonOutput.Append("]}");
             System.IO.File.WriteAllText(filePath, jsonOutput.ToString());
         }
     }
