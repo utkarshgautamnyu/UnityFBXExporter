@@ -51,9 +51,9 @@ namespace UnityFBXExporter
 				CopyComplexMaterialsToPath(gameObj, newPath, copyTextures);
 
 			string buildMesh = MeshToString(gameObj, newPath, copyMaterials, copyTextures);
-
-			if(System.IO.File.Exists(newPath))
-				System.IO.File.Delete(newPath);
+            
+            if (System.IO.File.Exists(newPath))
+            System.IO.File.Delete(newPath);
 
 			System.IO.File.WriteAllText(newPath, buildMesh);
 
@@ -412,6 +412,7 @@ namespace UnityFBXExporter
             // 2. Copy every distinct Material into the Materials folder
             //@cartzhang modify.As meshrender and skinnedrender is same level in inherit relation shape.
             // if not check,skinned render ,may lost some materials.
+            
             Renderer[] meshRenderers = gameObj.GetComponentsInChildren<Renderer>();
 			List<Material> everyMaterial = new List<Material>();
 			for(int i = 0; i < meshRenderers.Length; i++)
@@ -424,41 +425,59 @@ namespace UnityFBXExporter
 			}
 
             Material[] everyDistinctMaterial = everyMaterial.Distinct().ToArray<Material>();
-			everyDistinctMaterial = everyDistinctMaterial.OrderBy(o => o.name).ToArray<Material>();
 
-			// Log warning if there are multiple assets with the same name
-			for(int i = 0; i < everyDistinctMaterial.Length; i++)
-			{
-				for(int n = 0; n < everyDistinctMaterial.Length; n++)
-				{
-					if(i == n)
-						continue;
+            try
+            {
+                everyDistinctMaterial = everyDistinctMaterial.OrderBy(o => o.name).ToArray<Material>();
+            } catch(System.Exception e)
+            {
+                EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+            }
 
-					if(everyDistinctMaterial[i].name == everyDistinctMaterial[n].name)
-					{
-						Debug.LogErrorFormat("Two distinct materials {0} and {1} have the same name, this will not work with the FBX Exporter", everyDistinctMaterial[i], everyDistinctMaterial[n]);
-						return;
-					}
-				}
-			}
+            //Log warning if there are multiple assets with the same name
+            try
+            {
+                for (int i = 0; i < everyDistinctMaterial.Length; i++)
+                {
+                    for (int n = 0; n < everyDistinctMaterial.Length; n++)
+                    {
+                        if (i == n)
+                            continue;
 
-			List<string> everyMaterialName = new List<string>();
-			// Structure of materials naming, is used when packaging up the package
-			// PARENTNAME_ORIGINALMATNAME.mat
-			for(int i = 0; i < everyDistinctMaterial.Length; i++)
-			{
-				string newName = gameObj.name + "_" + everyDistinctMaterial[i].name;
-				string fullPath = materialsPath + "/" + newName + ".mat";
+                        if (everyDistinctMaterial[i].name == everyDistinctMaterial[n].name)
+                        {
+                            Debug.LogErrorFormat("Two distinct materials {0} and {1} have the same name, this will not work with the FBX Exporter", everyDistinctMaterial[i], everyDistinctMaterial[n]);
+                            return;
+                        }
+                    }
+                }
+            } catch (System.Exception e) {
+                EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+            }
+            List<string> everyMaterialName = new List<string>();
+            try
+            {
+                
+                // Structure of materials naming, is used when packaging up the package
+                // PARENTNAME_ORIGINALMATNAME.mat
+                for (int i = 0; i < everyDistinctMaterial.Length; i++)
+                {
+                    string newName = gameObj.name + "_" + everyDistinctMaterial[i].name;
+                    string fullPath = materialsPath + "/" + newName + ".mat";
 
-				if(File.Exists(fullPath))
-					File.Delete(fullPath);
-
-				if(CopyAndRenameAsset(everyDistinctMaterial[i], newName, materialsPath))
-					everyMaterialName.Add(newName);
-			}
-
-			// 3. Go through newly moved materials and copy every texture and update the material
-			AssetDatabase.Refresh();
+                    if (File.Exists(fullPath))
+                    File.Delete(fullPath);
+                    
+                    if (CopyAndRenameAsset(everyDistinctMaterial[i], newName, materialsPath))
+                        everyMaterialName.Add(newName);
+                }
+            } catch (System.Exception e)
+            {
+                EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
+            }
+              
+            // 3. Go through newly moved materials and copy every texture and update the material
+            AssetDatabase.Refresh();
 
 			List<Material> allNewMaterials = new List<Material>();
 
@@ -493,9 +512,9 @@ namespace UnityFBXExporter
 
 			AssetDatabase.Refresh();
 #endif
-		}
+        }
 
-		public static bool CopyAndRenameAsset(Object obj, string newName, string newFolderPath)
+        public static bool CopyAndRenameAsset(Object obj, string newName, string newFolderPath)
 		{
 #if UNITY_EDITOR
 			string path = newFolderPath;
