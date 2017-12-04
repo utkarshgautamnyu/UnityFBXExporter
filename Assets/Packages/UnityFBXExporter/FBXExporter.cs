@@ -414,7 +414,8 @@ namespace UnityFBXExporter
             // if not check,skinned render ,may lost some materials.
             
             Renderer[] meshRenderers = gameObj.GetComponentsInChildren<Renderer>();
-			List<Material> everyMaterial = new List<Material>();
+            //EditorUtility.DisplayDialog("Exception", "Exception" + meshRenderers[0].sharedMaterials[0], "Okay");
+            List<Material> everyMaterial = new List<Material>();
 			for(int i = 0; i < meshRenderers.Length; i++)
 			{
 				for(int n = 0; n < meshRenderers[i].sharedMaterials.Length; n++)
@@ -431,7 +432,6 @@ namespace UnityFBXExporter
                 everyDistinctMaterial = everyDistinctMaterial.OrderBy(o => o.name).ToArray<Material>();
             } catch(System.Exception e)
             {
-                //EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
                 Debug.Log(e);
             }
 
@@ -533,14 +533,15 @@ namespace UnityFBXExporter
 //			}
 
 			string assetPath = AssetDatabase.GetAssetPath(obj);
-			string extension = Path.GetExtension(assetPath);
+            string extension = Path.GetExtension(assetPath);
 
 			string newFileName = path + newName + extension;
 
 			if(File.Exists(newFileName))
 				return false;
-
-			return AssetDatabase.CopyAsset(assetPath, newFileName);
+            if (!AssetDatabase.IsValidFolder(assetPath))
+                return false;
+            return AssetDatabase.CopyAsset(assetPath, newFileName);
 #else
 			return false;
 

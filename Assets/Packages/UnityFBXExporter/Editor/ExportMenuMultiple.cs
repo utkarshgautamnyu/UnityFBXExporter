@@ -151,6 +151,12 @@ namespace UnityFBXExporter {
 
                 jsonObject.position = gameObjects[i].transform.position;
                 jsonObject.rotation = gameObjects[i].transform.rotation;
+                
+                // To account for rotation changes in HiFi
+                jsonObject.rotation.x += 180;
+                jsonObject.rotation.y += 180;
+                jsonObject.rotation.z += 180;
+
                 if (gameObjects[i].GetComponent<Renderer>())
                 {
                     jsonObject.dimensions = gameObjects[i].GetComponent<Renderer>().bounds.size;
