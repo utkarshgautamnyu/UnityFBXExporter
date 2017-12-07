@@ -141,6 +141,8 @@ namespace UnityFBXExporter {
         }
 
         public static void ExportGameObjectAsJson(List<GameObject> gameObjects, string path) {
+            Vector3 nullVector = new Vector3(0, 0, 0);
+            Vector3 unitVector = new Vector3(1, 1, 1);
 
             string filePath = EditorUtility.SaveFilePanelInProject("Select JSON Filename", "gameObjects.json", "json", "Export GameObjects to a JSON file");
 
@@ -150,21 +152,23 @@ namespace UnityFBXExporter {
                 SerializeJSON jsonObject = new SerializeJSON();
 
                 jsonObject.position = gameObjects[i].transform.position;
-                jsonObject.rotation = gameObjects[i].transform.rotation;
-                
-                // To account for rotation changes in HiFi
-                jsonObject.rotation.x += 180;
-                jsonObject.rotation.y += 180;
-                jsonObject.rotation.z += 180;
+                jsonObject.position.x *= -1;
 
-                if (gameObjects[i].GetComponent<Renderer>())
-                {
+                //jsonObject.rotation = gameObjects[i].transform.localEulerAngles;
+                //jsonObject.rotation.y *= -1;
+                //jsonObject.rotation.z *= -1;
+
+                if (gameObjects[i].GetComponent<Renderer>()) {
                     jsonObject.dimensions = gameObjects[i].GetComponent<Renderer>().bounds.size;
-                } else if (gameObjects[i].GetComponent<Collider>())
-                {
+                    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                } else if (gameObjects[i].GetComponent<Collider>()) {
                     jsonObject.dimensions = gameObjects[i].GetComponent<Collider>().bounds.size;
+                    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
                 }
                 
+                if (jsonObject.dimensions == nullVector) {
+                    jsonObject.dimensions = unitVector;
+                }
                 jsonObject.type = "Model";
                 string directory = Application.dataPath.Replace("Assets", "");
                 jsonObject.modelURL = "file:///" + directory + path + "/" + gameObjects[i].name + ".fbx";
