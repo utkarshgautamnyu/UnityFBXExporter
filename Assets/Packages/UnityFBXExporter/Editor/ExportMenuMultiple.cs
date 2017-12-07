@@ -68,6 +68,9 @@ namespace UnityFBXExporter {
             }
 
             string path = ExportGameObject(currentGameObjects, copyMaterials, copyTextures);
+            if (path == null) {
+                return;
+            }
             ExportGameObjectAsJson(currentGameObjects, path);
 
             EditorUtility.DisplayDialog("Success", "Success " + currentGameObjects.Count + " game objects exported", "Okay");
@@ -92,7 +95,9 @@ namespace UnityFBXExporter {
             }
             // Get folder path
             string newPath = GetNewPath(oldPath);
-
+            if(newPath == null) {
+                return null;
+            } 
             foreach (var gameObject in gameObjects) {
                 var fileName = newPath + "/" + gameObject.name + ".fbx";
                 if (fileName != null && fileName.Length != 0) {
