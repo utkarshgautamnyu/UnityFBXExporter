@@ -8,5 +8,8 @@ public class SerializeJSON : MonoBehaviour {
     public string modelURL;
     public Vector3 position;
     // public Vector3 rotation;
+    public Vector3 registrationPoint;
     public Vector3 dimensions;
+    //public int id;
+    //public int parentID;
 }

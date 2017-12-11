@@ -66,7 +66,29 @@ namespace UnityFBXExporter {
                     }
                 }
             }
-
+            //int id = 0;
+            //int parentID = 0;
+            //List<GameObject> currentGameObjects1 = new List<GameObject>();
+            //foreach (var obj in currentGameObjects)
+            //{
+            //    var cloneObj = Instantiate(obj);
+            //    currentGameObjects1.Add(cloneObj);
+            //}
+            //    foreach (var obj in currentGameObjects1) {
+            //    Debug.Log("ObjName");
+            //    Debug.Log(obj.name);
+            //    Transform transform = obj.transform;
+            //    //obj.tag = id.ToString();
+            //    //parentID = id;
+            //    foreach(Transform child in transform)
+            //    {
+            //        //child.tag = parentID.ToString();
+            //        Debug.Log("ChildName");
+            //        Debug.Log(child.name);
+            //    }
+            //    //transform.DetachChildren();
+            //    //++id;
+            //}
             string path = ExportGameObject(currentGameObjects, copyMaterials, copyTextures);
             if (path == null) {
                 return;
@@ -99,6 +121,10 @@ namespace UnityFBXExporter {
                 return null;
             } 
             foreach (var gameObject in gameObjects) {
+                Transform transform = gameObject.transform;
+                if (transform.parent) {
+                    continue;
+                }
                 var fileName = newPath + "/" + gameObject.name + ".fbx";
                 if (fileName != null && fileName.Length != 0) {
                     bool isSuccess = FBXExporter.ExportGameObjToFBX(gameObject, fileName, copyMaterials, copyTextures);
@@ -155,13 +181,25 @@ namespace UnityFBXExporter {
 
             for (int i = 0; i < gameObjects.Count; i++) {
                 SerializeJSON jsonObject = new SerializeJSON();
-
+                Transform transform = gameObjects[i].transform;
+                if (transform.parent) {
+                    continue;
+                }
                 jsonObject.position = gameObjects[i].transform.position;
                 jsonObject.position.x *= -1;
 
                 //jsonObject.rotation = gameObjects[i].transform.localEulerAngles;
                 //jsonObject.rotation.y *= -1;
                 //jsonObject.rotation.z *= -1;
+
+                if (gameObjects[i].GetComponent<MeshFilter>()) {
+                    Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
+                    Vector3 minBound = mesh.bounds.min;
+                    Vector3 boundSize = mesh.bounds.size;
+                    jsonObject.registrationPoint.x = (minBound.x * -1) / boundSize.x;
+                    jsonObject.registrationPoint.y = (minBound.y * -1) / boundSize.y;
+                    jsonObject.registrationPoint.z = (minBound.z * -1) / boundSize.z;
+                }
 
                 if (gameObjects[i].GetComponent<Renderer>()) {
                     jsonObject.dimensions = gameObjects[i].GetComponent<Renderer>().bounds.size;
