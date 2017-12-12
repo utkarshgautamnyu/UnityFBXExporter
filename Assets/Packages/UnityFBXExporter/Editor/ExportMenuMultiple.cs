@@ -201,14 +201,21 @@ namespace UnityFBXExporter {
                     jsonObject.registrationPoint.z = (minBound.z * -1) / boundSize.z;
                 }
 
-                if (gameObjects[i].GetComponent<Renderer>()) {
-                    jsonObject.dimensions = gameObjects[i].GetComponent<Renderer>().bounds.size;
-                    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-                } else if (gameObjects[i].GetComponent<Collider>()) {
-                    jsonObject.dimensions = gameObjects[i].GetComponent<Collider>().bounds.size;
+                //if (gameObjects[i].GetComponent<Renderer>()) {
+                //    jsonObject.dimensions = gameObjects[i].GetComponent<Renderer>().bounds.size;
+                //    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                //} else if (gameObjects[i].GetComponent<Collider>()) {
+                //    jsonObject.dimensions = gameObjects[i].GetComponent<Collider>().bounds.size;
+                //    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                //}
+
+                if (gameObjects[i].GetComponent<MeshFilter>())
+                {
+                    Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
+                    jsonObject.dimensions = mesh.bounds.size;
                     jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
                 }
-                
+
                 if (jsonObject.dimensions == nullVector) {
                     jsonObject.dimensions = unitVector;
                 }
