@@ -201,20 +201,34 @@ namespace UnityFBXExporter {
                     jsonObject.registrationPoint.z = (minBound.z * -1) / boundSize.z;
                 }
 
-                //if (gameObjects[i].GetComponent<Renderer>()) {
-                //    jsonObject.dimensions = gameObjects[i].GetComponent<Renderer>().bounds.size;
-                //    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-                //} else if (gameObjects[i].GetComponent<Collider>()) {
-                //    jsonObject.dimensions = gameObjects[i].GetComponent<Collider>().bounds.size;
-                //    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-                //}
+                if (gameObjects[i].GetComponent<Renderer>()) {
+                    Bounds bounds = gameObjects[i].GetComponent<Renderer>().bounds;
+                    Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
 
-                if (gameObjects[i].GetComponent<MeshFilter>())
-                {
-                    Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
-                    jsonObject.dimensions = mesh.bounds.size;
+                    foreach (Renderer renderer in renderers) {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+
+                    jsonObject.dimensions = bounds.size;
+                    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                } else if (gameObjects[i].GetComponent<Collider>()) {
+                    Bounds bounds = gameObjects[i].GetComponent<Collider>().bounds;
+                    Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
+
+                    foreach (Collider collider in colliders) {
+                        bounds.Encapsulate(collider.bounds);
+                    }
+
+                    jsonObject.dimensions = bounds.size;
                     jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
                 }
+
+                //if (gameObjects[i].GetComponent<MeshFilter>())
+                //{
+                //    Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
+                //    jsonObject.dimensions = mesh.bounds.size;
+                //    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                //}
 
                 if (jsonObject.dimensions == nullVector) {
                     jsonObject.dimensions = unitVector;
@@ -227,17 +241,19 @@ namespace UnityFBXExporter {
                     jsonObject.type = "Light";
                 } else if (gameObjects[i].GetComponent<Camera>()) {
                     jsonObject.type = "";
-                } else if (gameObjects[i].GetComponent<MeshFilter>()) {
-                    var mesh = gameObjects[i].GetComponent<MeshFilter>().sharedMesh;
-                    switch (mesh.name) {
-                        case "Cube Instance":
-                            jsonObject.type = "Box";
-                            break;
-                        case "Sphere Instance":
-                            jsonObject.type = "Sphere";
-                            break;
-                    }
                 }
+                //else if (gameObjects[i].GetComponent<MeshFilter>()) {
+                //    var mesh = gameObjects[i].GetComponent<MeshFilter>().sharedMesh;
+                //    switch (mesh.name) {
+                //        case "Cube Instance":
+                //            jsonObject.type = "Box";
+                //            break;
+                //        case "Sphere Instance":
+                //            jsonObject.type = "Sphere";
+                //            break;
+                //    }
+                //}
+
                 string jsonString = JsonUtility.ToJson(jsonObject);
                 jsonOutput.Append(jsonString);
                 if (i != gameObjects.Count - 1) {
