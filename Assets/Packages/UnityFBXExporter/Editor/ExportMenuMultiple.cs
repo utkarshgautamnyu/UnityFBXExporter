@@ -202,30 +202,103 @@ namespace UnityFBXExporter {
                 }
 
                 // Setting Dimensions
+                
+                //Bounds bounds = new Bounds();
+                //if (gameObjects[i].GetComponent<Renderer>())
+                //{
+                //    Bounds parentBounds = gameObjects[i].GetComponent<Renderer>().bounds;
+                //    bounds.Encapsulate(parentBounds);
+                //}
+                //Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
+                //foreach (Renderer renderer in renderers)
+                //{
+                //    bounds.Encapsulate(renderer.bounds);
+                //}
+
+                //Vector3 localCenter = bounds.center - gameObjects[i].transform.position;
+                //bounds.center = localCenter;
+
+                //jsonObject.dimensions = bounds.size;
+                //jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+
+                //Bounds bounds = new Bounds();
+                //if (gameObjects[i].GetComponent<MeshFilter>())
+                //{
+                //    Bounds parentBounds = gameObjects[i].GetComponent<MeshFilter>().mesh.bounds;
+                //    bounds.Encapsulate(parentBounds);
+                //    Debug.Log("Parent");
+                //    Debug.Log(bounds.size);
+                //}
+
                 Bounds bounds = new Bounds();
-                if (gameObjects[i].GetComponent<Renderer>()) {
-                    Bounds parentBounds = gameObjects[i].GetComponent<Renderer>().bounds;
-                    bounds.Encapsulate(parentBounds);
+                Renderer parentRenderer = new Renderer();
+                Bounds globalParentBound = new Bounds();
+                Bounds parentBound = new Bounds();
+                bool hasRenderer = false;
+                if (gameObjects[i].GetComponent<Renderer>())
+                {
+                    parentRenderer = gameObjects[i].GetComponent<Renderer>();
+                    globalParentBound = gameObjects[i].GetComponent<Renderer>().bounds;
+                    hasRenderer = true;
                 }
+                
+                if (gameObjects[i].GetComponent<MeshFilter>())
+                {
+                    parentBound = gameObjects[i].GetComponent<MeshFilter>().mesh.bounds;
+                    bounds.Encapsulate(parentBound);
+                    Debug.Log("parentBound");
+                    Debug.Log(parentBound);
+                }
+                
                 Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
-                foreach (Renderer renderer in renderers) {
-                    bounds.Encapsulate(renderer.bounds);
+                foreach (Renderer renderer in renderers)
+                {
+                    if (renderer == parentRenderer)
+                    {
+                        continue;
+                    }
+
+                    Bounds childBound = renderer.bounds;
+                    if (hasRenderer)
+                    {
+                        childBound.center -= globalParentBound.center;
+                    } else
+                    {
+                        childBound.center -= gameObjects[i].transform.position;
+                    }
+                    
+                    bounds.Encapsulate(childBound);
                 }
 
                 jsonObject.dimensions = bounds.size;
                 jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
 
-            //} else if (gameObjects[i].GetComponent<Collider>()) {
-            //        Bounds bounds = gameObjects[i].GetComponent<Collider>().bounds;
-            //        Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
+                //Bounds bounds = new Bounds();
+                //if (gameObjects[i].GetComponent<Collider>())
+                //{
+                //    Bounds parentBounds = gameObjects[i].GetComponent<Collider>().bounds;
+                //    bounds.Encapsulate(parentBounds);
+                //}
+                //Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
+                //foreach (Collider collider in colliders)
+                //{
+                //    bounds.Encapsulate(collider.bounds);
+                //}
 
-            //        foreach (Collider collider in colliders) {
-            //            bounds.Encapsulate(collider.bounds);
-            //        }
+                //jsonObject.dimensions = bounds.size;
+                //jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
 
-            //        jsonObject.dimensions = bounds.size;
-            //        jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-            //    }
+                //} else if (gameObjects[i].GetComponent<Collider>()) {
+                //        Bounds bounds = gameObjects[i].GetComponent<Collider>().bounds;
+                //        Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
+
+                //        foreach (Collider collider in colliders) {
+                //            bounds.Encapsulate(collider.bounds);
+                //        }
+
+                //        jsonObject.dimensions = bounds.size;
+                //        jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                //    }
 
                 //if (gameObjects[i].GetComponent<MeshFilter>())
                 //{
