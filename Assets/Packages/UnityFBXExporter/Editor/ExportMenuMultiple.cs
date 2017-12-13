@@ -201,27 +201,31 @@ namespace UnityFBXExporter {
                     jsonObject.registrationPoint.z = (minBound.z * -1) / boundSize.z;
                 }
 
+                // Setting Dimensions
+                Bounds bounds = new Bounds();
                 if (gameObjects[i].GetComponent<Renderer>()) {
-                    Bounds bounds = gameObjects[i].GetComponent<Renderer>().bounds;
-                    Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
-
-                    foreach (Renderer renderer in renderers) {
-                        bounds.Encapsulate(renderer.bounds);
-                    }
-
-                    jsonObject.dimensions = bounds.size;
-                    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-                } else if (gameObjects[i].GetComponent<Collider>()) {
-                    Bounds bounds = gameObjects[i].GetComponent<Collider>().bounds;
-                    Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
-
-                    foreach (Collider collider in colliders) {
-                        bounds.Encapsulate(collider.bounds);
-                    }
-
-                    jsonObject.dimensions = bounds.size;
-                    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+                    Bounds parentBounds = gameObjects[i].GetComponent<Renderer>().bounds;
+                    bounds.Encapsulate(parentBounds);
                 }
+                Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
+                foreach (Renderer renderer in renderers) {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+
+                jsonObject.dimensions = bounds.size;
+                jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+
+            //} else if (gameObjects[i].GetComponent<Collider>()) {
+            //        Bounds bounds = gameObjects[i].GetComponent<Collider>().bounds;
+            //        Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
+
+            //        foreach (Collider collider in colliders) {
+            //            bounds.Encapsulate(collider.bounds);
+            //        }
+
+            //        jsonObject.dimensions = bounds.size;
+            //        jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
+            //    }
 
                 //if (gameObjects[i].GetComponent<MeshFilter>())
                 //{
