@@ -57,7 +57,12 @@ namespace UnityFBXExporter
             if (null == obj) {
                 return;
             } else {
-                foreach (Transform child in obj.transform) {
+                var transform = obj.GetComponentsInChildren<Transform>();
+                var parent = obj.transform;
+                foreach (Transform child in transform) {
+                    if (child == parent) {
+                        continue;
+                    }
 
                     if (null == child) {
                         continue;
@@ -254,9 +259,9 @@ namespace UnityFBXExporter
                     Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
                     Vector3 minBound = mesh.bounds.min;
                     Vector3 boundSize = mesh.bounds.size;
-                    jsonObject.registrationPoint.x = (minBound.x * -1) / boundSize.x;
-                    jsonObject.registrationPoint.y = (minBound.y * -1) / boundSize.y;
-                    jsonObject.registrationPoint.z = (minBound.z * -1) / boundSize.z;
+                    jsonObject.registrationPoint.x = (boundSize.x == 0) ? 0 : (minBound.x * -1) / boundSize.x;
+                    jsonObject.registrationPoint.y = (boundSize.y == 0) ? 0 : (minBound.y * -1) / boundSize.y;
+                    jsonObject.registrationPoint.z = (boundSize.z == 0) ? 0 : (minBound.z * -1) / boundSize.z;
                 }
 
                 // Setting Dimensions
@@ -283,6 +288,7 @@ namespace UnityFBXExporter
                     jsonObject.type = "";
                 } else {
                     jsonObject.type = "Model";
+                    jsonObject.shapeType = "compound";
                 }
 
                 // Setting Object ID and Parent ID

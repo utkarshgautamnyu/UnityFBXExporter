@@ -11,4 +11,5 @@ public class SerializeJSON : MonoBehaviour {
     public Vector3 dimensions;
     public string id;
     public string parentID;
+    public string shapeType;
 }
