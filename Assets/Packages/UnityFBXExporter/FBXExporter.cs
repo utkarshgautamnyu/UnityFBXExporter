@@ -414,7 +414,6 @@ namespace UnityFBXExporter
             // if not check,skinned render ,may lost some materials.
             
             Renderer[] meshRenderers = gameObj.GetComponentsInChildren<Renderer>();
-            //EditorUtility.DisplayDialog("Exception", "Exception" + meshRenderers[0].sharedMaterials[0], "Okay");
             List<Material> everyMaterial = new List<Material>();
 			for(int i = 0; i < meshRenderers.Length; i++)
 			{
@@ -422,7 +421,6 @@ namespace UnityFBXExporter
 				{
 					everyMaterial.Add(meshRenderers[i].sharedMaterials[n]);
 				}
-                //Debug.Log(meshRenderers[i].gameObject.name);
 			}
 
             Material[] everyDistinctMaterial = everyMaterial.Distinct().ToArray<Material>();
@@ -453,13 +451,11 @@ namespace UnityFBXExporter
                     }
                 }
             } catch (System.Exception e) {
-                //EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
                 Debug.Log(e);
             }
             List<string> everyMaterialName = new List<string>();
             try
             {
-                
                 // Structure of materials naming, is used when packaging up the package
                 // PARENTNAME_ORIGINALMATNAME.mat
                 for (int i = 0; i < everyDistinctMaterial.Length; i++)
@@ -475,7 +471,6 @@ namespace UnityFBXExporter
                 }
             } catch (System.Exception e)
             {
-                //EditorUtility.DisplayDialog("Exception", "Exception" + e, "Okay");
                 Debug.Log(e);
             }
               

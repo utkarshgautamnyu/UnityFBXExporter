@@ -5,7 +5,9 @@ using UnityEditor;
 using System.Text;
 
 namespace UnityFBXExporter {
-    public class ExporterMenuMultiple : Editor {
+    public class ExporterMenuHiFi : Editor {
+        // Global Variables
+        public static Dictionary<GameObject, GameObject> childParentMapping = new Dictionary<GameObject, GameObject>();
 
         // Dropdown
         [MenuItem("GameObject/HiFi FBX Exporter/Only GameObject", false, 40)]
@@ -38,9 +40,36 @@ namespace UnityFBXExporter {
         public static void ExportGameObjectAndMaterialsTexturesToFBX() {
             ExportCurrentGameObject(true, true);
         }
+        
+        // To convert parentID and ID to HiFi compatible string
+        private static string convertIDToString (int ID) {
+            return ID.ToString("{00000000-0000-0000-0000-000000000000}");
+        }
+
+        // Reach every child in Depth First manner and unparent it
+        private static void UnparentChildRecursive(GameObject obj) {
+            if (null == obj) {
+                return;
+            } else {
+                var transform = obj.GetComponentsInChildren<Transform>();
+                var parent = obj.transform;
+                foreach (Transform child in transform) {
+                    if (child == parent || null == child || child.GetComponent<Camera>()) {
+                        continue;
+                    }
+                    if (!childParentMapping.ContainsKey(child.gameObject)) {
+                        var parentObj = child.parent ? child.parent.gameObject : null;
+                        childParentMapping.Add(child.gameObject, parentObj);
+                    }
+                    child.parent = null;
+                    UnparentChildRecursive(child.gameObject);
+                }
+            }
+        }
 
         private static void ExportCurrentGameObject(bool copyMaterials, bool copyTextures) {
             List<GameObject> currentGameObjects = new List<GameObject>();
+            List<GameObject> separatedGameObjects = new List<GameObject>();
             GameObject currentGameObject;
 
             // Export the entire scene if no object selected
@@ -48,7 +77,10 @@ namespace UnityFBXExporter {
                 if (EditorUtility.DisplayDialog("Export Scene", "No Game Object Selected. Do you want to export the entire scene?", "OK", "Cancel")) {
                     var gameObjects = UnityEngine.Object.FindObjectsOfType<GameObject>();
                     foreach (var obj in gameObjects) {
-                        if (obj.activeInHierarchy) {
+                        // skip if gameobject is a camera
+                        if (obj.GetComponent<Camera>()) {
+                            continue;
+                        } else if (obj.activeInHierarchy) {
                             currentGameObjects.Add(obj);
                         }
                     }
@@ -61,41 +93,46 @@ namespace UnityFBXExporter {
                     if (currentGameObject == null) {
                         EditorUtility.DisplayDialog("Warning", "Item selected is not a GameObject", "Okay");
                         return;
+                    } else if (currentGameObject.GetComponent<Camera>()) {
+                        // skip if gameobject is a camera
+                        continue;
                     } else {
                         currentGameObjects.Add(currentGameObject);
                     }
                 }
             }
-            //int id = 0;
-            //int parentID = 0;
-            //List<GameObject> currentGameObjects1 = new List<GameObject>();
-            //foreach (var obj in currentGameObjects)
-            //{
-            //    var cloneObj = Instantiate(obj);
-            //    currentGameObjects1.Add(cloneObj);
-            //}
-            //    foreach (var obj in currentGameObjects1) {
-            //    Debug.Log("ObjName");
-            //    Debug.Log(obj.name);
-            //    Transform transform = obj.transform;
-            //    //obj.tag = id.ToString();
-            //    //parentID = id;
-            //    foreach(Transform child in transform)
-            //    {
-            //        //child.tag = parentID.ToString();
-            //        Debug.Log("ChildName");
-            //        Debug.Log(child.name);
-            //    }
-            //    //transform.DetachChildren();
-            //    //++id;
-            //}
-            string path = ExportGameObject(currentGameObjects, copyMaterials, copyTextures);
+
+            // Separate out each child game object to export independently
+            foreach (var obj in currentGameObjects) {
+                UnparentChildRecursive(obj);
+                if (!childParentMapping.ContainsKey(obj)) {
+                    var parentObj = obj.transform.parent ? obj.transform.parent.gameObject : null;
+                    childParentMapping.Add(obj, parentObj);
+                }
+            }
+
+            foreach (var key in childParentMapping.Keys) {
+                separatedGameObjects.Add(key);
+            }
+
+            // Export separated game objects
+            string path = ExportGameObject(separatedGameObjects, copyMaterials, copyTextures);
             if (path == null) {
                 return;
             }
-            ExportGameObjectAsJson(currentGameObjects, path);
 
-            EditorUtility.DisplayDialog("Success", "Success " + currentGameObjects.Count + " game objects exported", "Okay");
+            // Export game object information as a json
+            ExportGameObjectAsJson(separatedGameObjects, path);
+
+            // Re-Parent all object
+            foreach(var key in childParentMapping.Keys) {
+                var parent = childParentMapping[key] ? childParentMapping[key].transform : null;
+                key.transform.parent = parent;
+            }
+
+            childParentMapping.Clear();
+
+            EditorUtility.DisplayDialog("Success", "Success " + separatedGameObjects.Count + " game objects exported", "Okay");
         }
 
         /// <summary>
@@ -107,30 +144,26 @@ namespace UnityFBXExporter {
         /// <param name="copyTextures">If set to <c>true</c> copy textures.</param>
         /// <param name="oldPath">Old path.</param>
         public static string ExportGameObject(List<GameObject> gameObjects, bool copyMaterials, bool copyTextures, string oldPath = null) {
-            foreach (var gameObj in gameObjects)
-            {
-                if (gameObj == null)
-                {
+            foreach (var gameObj in gameObjects) {
+                if (gameObj == null) {
                     EditorUtility.DisplayDialog("Object is null", "Please select any GameObject to Export to FBX", "Okay");
                     return null;
                 }
             }
+            
             // Get folder path
             string newPath = GetNewPath(oldPath);
-            if(newPath == null) {
+            if (newPath == null) {
                 return null;
-            } 
+            }
+
             foreach (var gameObject in gameObjects) {
-                Transform transform = gameObject.transform;
-                if (transform.parent) {
-                    continue;
-                }
                 var fileName = newPath + "/" + gameObject.name + ".fbx";
                 if (fileName != null && fileName.Length != 0) {
                     bool isSuccess = FBXExporter.ExportGameObjToFBX(gameObject, fileName, copyMaterials, copyTextures);
                     if (!isSuccess) {
                         EditorUtility.DisplayDialog("Warning", "The extension probably wasn't an FBX file, could not export.", "Okay");
-                    } 
+                    }
                 }
             }
             return newPath;
@@ -174,163 +207,71 @@ namespace UnityFBXExporter {
         public static void ExportGameObjectAsJson(List<GameObject> gameObjects, string path) {
             Vector3 nullVector = new Vector3(0, 0, 0);
             Vector3 unitVector = new Vector3(1, 1, 1);
-
+            Dictionary<GameObject, int> objectToIDMapping = new Dictionary<GameObject, int>();
+            int objectID = 2;
+            foreach(var key in childParentMapping.Keys) {
+                if (!objectToIDMapping.ContainsKey(key)) {
+                    objectToIDMapping.Add(key, objectID++);
+                }
+            }
             string filePath = EditorUtility.SaveFilePanelInProject("Select JSON Filename", "gameObjects.json", "json", "Export GameObjects to a JSON file");
 
             StringBuilder jsonOutput = new StringBuilder("{\"Entities\":[");
 
             for (int i = 0; i < gameObjects.Count; i++) {
                 SerializeJSON jsonObject = new SerializeJSON();
-                Transform transform = gameObjects[i].transform;
-                if (transform.parent) {
-                    continue;
-                }
+
+                // Setting position
                 jsonObject.position = gameObjects[i].transform.position;
                 jsonObject.position.x *= -1;
 
-                //jsonObject.rotation = gameObjects[i].transform.localEulerAngles;
-                //jsonObject.rotation.y *= -1;
-                //jsonObject.rotation.z *= -1;
-
+                // Setting registration Point
                 if (gameObjects[i].GetComponent<MeshFilter>()) {
                     Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
                     Vector3 minBound = mesh.bounds.min;
                     Vector3 boundSize = mesh.bounds.size;
-                    jsonObject.registrationPoint.x = (minBound.x * -1) / boundSize.x;
-                    jsonObject.registrationPoint.y = (minBound.y * -1) / boundSize.y;
-                    jsonObject.registrationPoint.z = (minBound.z * -1) / boundSize.z;
+                    jsonObject.registrationPoint.x = (boundSize.x == 0) ? 0 : (minBound.x * -1) / boundSize.x;
+                    jsonObject.registrationPoint.y = (boundSize.y == 0) ? 0 : (minBound.y * -1) / boundSize.y;
+                    jsonObject.registrationPoint.z = (boundSize.z == 0) ? 0 : (minBound.z * -1) / boundSize.z;
                 }
 
                 // Setting Dimensions
-                
-                //Bounds bounds = new Bounds();
-                //if (gameObjects[i].GetComponent<Renderer>())
-                //{
-                //    Bounds parentBounds = gameObjects[i].GetComponent<Renderer>().bounds;
-                //    bounds.Encapsulate(parentBounds);
-                //}
-                //Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
-                //foreach (Renderer renderer in renderers)
-                //{
-                //    bounds.Encapsulate(renderer.bounds);
-                //}
-
-                //Vector3 localCenter = bounds.center - gameObjects[i].transform.position;
-                //bounds.center = localCenter;
-
-                //jsonObject.dimensions = bounds.size;
-                //jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-
-                //Bounds bounds = new Bounds();
-                //if (gameObjects[i].GetComponent<MeshFilter>())
-                //{
-                //    Bounds parentBounds = gameObjects[i].GetComponent<MeshFilter>().mesh.bounds;
-                //    bounds.Encapsulate(parentBounds);
-                //    Debug.Log("Parent");
-                //    Debug.Log(bounds.size);
-                //}
-
                 Bounds bounds = new Bounds();
-                Renderer parentRenderer = new Renderer();
-                Bounds globalParentBound = new Bounds();
-                Bounds parentBound = new Bounds();
-                bool hasRenderer = false;
-                if (gameObjects[i].GetComponent<Renderer>())
-                {
-                    parentRenderer = gameObjects[i].GetComponent<Renderer>();
-                    globalParentBound = gameObjects[i].GetComponent<Renderer>().bounds;
-                    hasRenderer = true;
+                
+                if (gameObjects[i].GetComponent<MeshFilter>()) {
+                    bounds = gameObjects[i].GetComponent<MeshFilter>().mesh.bounds;
                 }
                 
-                if (gameObjects[i].GetComponent<MeshFilter>())
-                {
-                    parentBound = gameObjects[i].GetComponent<MeshFilter>().mesh.bounds;
-                    bounds.Encapsulate(parentBound);
-                    Debug.Log("parentBound");
-                    Debug.Log(parentBound);
-                }
-                
-                Renderer[] renderers = gameObjects[i].GetComponentsInChildren<Renderer>();
-                foreach (Renderer renderer in renderers)
-                {
-                    if (renderer == parentRenderer)
-                    {
-                        continue;
-                    }
-
-                    Bounds childBound = renderer.bounds;
-                    if (hasRenderer)
-                    {
-                        childBound.center -= globalParentBound.center;
-                    } else
-                    {
-                        childBound.center -= gameObjects[i].transform.position;
-                    }
-                    
-                    bounds.Encapsulate(childBound);
-                }
-
                 jsonObject.dimensions = bounds.size;
                 jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-
-                //Bounds bounds = new Bounds();
-                //if (gameObjects[i].GetComponent<Collider>())
-                //{
-                //    Bounds parentBounds = gameObjects[i].GetComponent<Collider>().bounds;
-                //    bounds.Encapsulate(parentBounds);
-                //}
-                //Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
-                //foreach (Collider collider in colliders)
-                //{
-                //    bounds.Encapsulate(collider.bounds);
-                //}
-
-                //jsonObject.dimensions = bounds.size;
-                //jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-
-                //} else if (gameObjects[i].GetComponent<Collider>()) {
-                //        Bounds bounds = gameObjects[i].GetComponent<Collider>().bounds;
-                //        Collider[] colliders = gameObjects[i].GetComponentsInChildren<Collider>();
-
-                //        foreach (Collider collider in colliders) {
-                //            bounds.Encapsulate(collider.bounds);
-                //        }
-
-                //        jsonObject.dimensions = bounds.size;
-                //        jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-                //    }
-
-                //if (gameObjects[i].GetComponent<MeshFilter>())
-                //{
-                //    Mesh mesh = gameObjects[i].GetComponent<MeshFilter>().mesh;
-                //    jsonObject.dimensions = mesh.bounds.size;
-                //    jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
-                //}
 
                 if (jsonObject.dimensions == nullVector) {
                     jsonObject.dimensions = unitVector;
                 }
-                jsonObject.type = "Model";
+
+                // Setting type of model
+                if (gameObjects[i].GetComponent<Light>()) {
+                    jsonObject.type = "Light";
+                } else {
+                    jsonObject.type = "Model";
+                    jsonObject.shapeType = "compound";
+                }
+
+                // Setting Object ID and Parent ID
+                jsonObject.id = convertIDToString(objectToIDMapping[gameObjects[i]]);
+
+                var parent = childParentMapping[gameObjects[i]];
+                if (parent && objectToIDMapping.ContainsKey(parent)) {
+                    jsonObject.parentID = convertIDToString(objectToIDMapping[parent]);
+                } else {
+                    jsonObject.parentID = convertIDToString(0);
+                }
+
+                // Setting model URL
                 string directory = Application.dataPath.Replace("Assets", "");
                 jsonObject.modelURL = "file:///" + directory + path + "/" + gameObjects[i].name + ".fbx";
 
-                if (gameObjects[i].GetComponent<Light>()) {
-                    jsonObject.type = "Light";
-                } else if (gameObjects[i].GetComponent<Camera>()) {
-                    jsonObject.type = "";
-                }
-                //else if (gameObjects[i].GetComponent<MeshFilter>()) {
-                //    var mesh = gameObjects[i].GetComponent<MeshFilter>().sharedMesh;
-                //    switch (mesh.name) {
-                //        case "Cube Instance":
-                //            jsonObject.type = "Box";
-                //            break;
-                //        case "Sphere Instance":
-                //            jsonObject.type = "Sphere";
-                //            break;
-                //    }
-                //}
-
+                // Writing JSON to file
                 string jsonString = JsonUtility.ToJson(jsonObject);
                 jsonOutput.Append(jsonString);
                 if (i != gameObjects.Count - 1) {
@@ -341,5 +282,4 @@ namespace UnityFBXExporter {
             System.IO.File.WriteAllText(filePath, jsonOutput.ToString());
         }
     }
-
 }
