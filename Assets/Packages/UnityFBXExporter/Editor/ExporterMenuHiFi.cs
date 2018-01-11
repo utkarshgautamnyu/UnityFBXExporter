@@ -40,7 +40,7 @@ namespace UnityFBXExporter {
         public static void ExportGameObjectAndMaterialsTexturesToFBX() {
             ExportCurrentGameObject(true, true);
         }
-        
+
         // To convert parentID and ID to HiFi compatible string
         private static string convertIDToString (int ID) {
             return ID.ToString("{00000000-0000-0000-0000-000000000000}");
@@ -150,7 +150,7 @@ namespace UnityFBXExporter {
                     return null;
                 }
             }
-            
+
             // Get folder path
             string newPath = GetNewPath(oldPath);
             if (newPath == null) {
@@ -237,11 +237,11 @@ namespace UnityFBXExporter {
 
                 // Setting Dimensions
                 Bounds bounds = new Bounds();
-                
+
                 if (gameObjects[i].GetComponent<MeshFilter>()) {
                     bounds = gameObjects[i].GetComponent<MeshFilter>().mesh.bounds;
                 }
-                
+
                 jsonObject.dimensions = bounds.size;
                 jsonObject.dimensions = Vector3.Scale(jsonObject.dimensions, gameObjects[i].transform.localScale);
 
@@ -269,7 +269,7 @@ namespace UnityFBXExporter {
 
                 // Setting model URL
                 string directory = Application.dataPath.Replace("Assets", "");
-                jsonObject.modelURL = "file:///" + directory + path + "/" + gameObjects[i].name + ".fbx";
+                jsonObject.modelURL = "./" + gameObjects[i].name + ".fbx";
 
                 // Writing JSON to file
                 string jsonString = JsonUtility.ToJson(jsonObject);

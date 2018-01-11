@@ -2,15 +2,16 @@
 Unity FBX Exporter (1.2.0)
 -------------------------
 
-GitHub: https://github.com/KellanHiggins/UnityFBXExporter
-Contact: unityfbxexporter@8bitgoose.com
+GitHub: https://github.com/MiladNazeri/UnityFBXExporter
 
-The Unity FBX Exporter is a simple FBX writer designed to export static objects from Unity into the FBX format, preserving the materials, game object hierarchy and textures attached.
+Contact: info@highfidelity.io
 
-It was written for the Unity asset Building Crafter (http://u3d.as/ovC) which allows anyone using Unity to create buildings right in Unity without any modeling experience.
+The Unity to Highfidelity JSON/FBX Exporter adapted from the Unity FBX Exporter by Kellan Higgins(https://github.com/KellanHiggins/UnityFBXExporter).  It is a simple JSON and FBX writer designed to export static objects from Unity into the FBX format, preserving the materials, game object hierarchy and textures attached.
 
-![Left is Unity](/Docs/ExampleExport.jpg?raw=true "Optional Title")
+It was written for High Fidelity - An early-stage technology lab experimenting with Virtual Worlds and VR.  https://github.com/highfidelity/hifi
 
+
+--Much of the following is borrowed from the original Unity FBX Exporter Readme--
 
 Features
 -------------------------
@@ -133,14 +134,3 @@ Version 1.1.0
 Versin 1.0.0
 
 1. Initial release
-
-
-
-
-
-
-
-
-
-
-
